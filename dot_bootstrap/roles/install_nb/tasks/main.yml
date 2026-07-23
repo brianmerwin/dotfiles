@@ -13,12 +13,56 @@
         dest: "{{ lookup('env', 'HOME') }}/.local/bin/nb"
         mode: '0755'
 
-    - name: Install nb completions
-      ansible.builtin.command:
-        cmd: "{{ lookup('env', 'HOME') }}/.local/bin/nb completions install --download"
+    - name: Detect active shell
+      ansible.builtin.shell: |
+        echo $SHELL | grep -oE '(bash|zsh)$' || echo 'bash'
+      register: detected_shell
       changed_when: false
+
+    - name: Install bash completions
+      block:
+        - name: Ensure ~/.bash_completion.d directory exists
+          ansible.builtin.file:
+            path: "{{ lookup('env', 'HOME') }}/.bash_completion.d"
+            state: directory
+            mode: '0755'
+
+        - name: Download bash completion
+          ansible.builtin.get_url:
+            url: https://raw.githubusercontent.com/xwmx/nb/master/etc/nb-completion.bash
+            dest: "{{ lookup('env', 'HOME') }}/.bash_completion.d/nb"
+            mode: '0644'
+
+        - name: Add bash completion to ~/.bashrc
+          ansible.builtin.lineinfile:
+            path: "{{ lookup('env', 'HOME') }}/.bashrc"
+            line: "[ -f ~/.bash_completion.d/nb ] && source ~/.bash_completion.d/nb"
+            create: yes
+      when: detected_shell.stdout == 'bash'
+
+    - name: Install zsh completions
+      block:
+        - name: Ensure ~/.zsh/completion directory exists
+          ansible.builtin.file:
+            path: "{{ lookup('env', 'HOME') }}/.zsh/completion"
+            state: directory
+            mode: '0755'
+
+        - name: Download zsh completion
+          ansible.builtin.get_url:
+            url: https://raw.githubusercontent.com/xwmx/nb/master/etc/nb-completion.zsh
+            dest: "{{ lookup('env', 'HOME') }}/.zsh/completion/_nb"
+            mode: '0644'
+
+        - name: Add zsh completion to ~/.zshrc
+          ansible.builtin.lineinfile:
+            path: "{{ lookup('env', 'HOME') }}/.zshrc"
+            line: "fpath=(~/.zsh/completion $fpath)"
+            create: yes
+      when: detected_shell.stdout == 'zsh'
 
     - name: Install nb environment
       ansible.builtin.command:
         cmd: "{{ lookup('env', 'HOME') }}/.local/bin/nb env install"
       changed_when: false
+
