@@ -1,0 +1,328 @@
+" Disable vi compatability mode
+set nocompatible
+
+" Configure vim to use the clipboard if running under WSL
+if system('uname -r') =~ "microsoft"
+    augroup Yank
+        autocmd!
+        autocmd TextYankPost * : call system('/mnt/c/windows/system32/clip.exe',@")
+    augroup END
+else
+    set clipboard+=unnamedplus
+endif
+
+" Turn syntax highlighting on.
+syntax on
+set showmatch
+
+" Add numbers to each line on the left-hand side.
+set number relativenumber
+
+" Allow use of jj as an alternative to <Esc>
+imap jj <Esc>
+" inoremap <expr> jj (getchar() ==# 'j' ? (getchar() ==# 'j' ? "\<Esc>" : "j") : "j")
+" configurable delay for jj as escape key
+" set timeoutlen=300
+
+" Allow ; instead of :
+noremap ; :
+
+" Set leader key
+let mapleader = " "
+
+" Leader key keybinds
+" Clear trailing whitespace with <Leader>cw
+nnoremap <Leader>cw :%s/\s\+$//g<CR>:nohlsearch<CR>
+
+" use w!! to save an open file with sudo
+cmap w!! w !sudo tee % >/dev/null
+
+" Press F4 to toggle highlighting on/off, and show current value.
+noremap <F4> :set hlsearch! hlsearch?<CR>
+
+" New tabs
+nnoremap <Leader>t :tabnew<CR>
+
+" navigate buffers
+nnoremap L :bnext<CR>
+nnoremap H :bprev<CR>
+
+" VIM panes and resizing
+nnoremap <Leader>v  :vsplit<CR>
+nnoremap <Leader>h  :split<CR>
+
+" Toggle comment/uncomment with Ctrl + / with t-pop/vim-commentary
+" Reminder - In this case Ctrl + / actually returns Ctrl + _
+nnoremap <C-_> <Plug>CommentaryLine
+xnoremap <C-_> <Plug>Commentary
+inoremap <C-_> <Plug>CommentaryLine
+
+" Trailing whitespace configs
+set list
+set listchars=tab:•\ ,trail:•,extends:»,precedes:« " Unprintable chars mapping
+
+" Enable file type detection
+filetype on
+filetype plugin indent on
+
+" Set tab defaults.
+set tabstop=4
+set shiftwidth=4
+set softtabstop=4
+set expandtab
+set backspace=indent,eol,start
+nnoremap <S-Tab> <<
+inoremap <S-Tab> <C-d>
+
+" Session parameters - mostly for tmux-resurrect
+set sessionoptions=blank,curdir,folds,help,options,tabpages,winsize
+
+" YAML:  Use 2-space indentation & unfucking incorrect indentation
+autocmd FileType yaml,ansible setlocal expandtab shiftwidth=2 softtabstop=2 tabstop=2
+autocmd FileType yaml,ansible setlocal indentexpr=GetYamlIndent()
+function! GetYamlIndent()
+    let prev_line = getline(v:lnum - 1)
+        if prev_line =~ ':$' " Only indent if the previous line ENDS with a colon
+		        return indent(v:lnum - 1) + shiftwidth()
+			    else
+				            return indent(v:lnum - 1)
+					        endif
+					endfunction
+
+" Ansible Playbook Files
+let g:ansible_unindent_after_newline = 1
+let g:ansible_attribute_highlight = "ob"
+let g:ansible_name_highlight = 'd'
+let g:ansible_extra_keywords_highlight = 1
+
+" Ensure Jinja2 templates are correctly detected as filetype=jinja
+autocmd BufRead,BufNewFile *.j2,*.jinja,*.jinja2 set filetype=jinja fileformat=unix
+
+" Python: Enforce 4-space indentation
+autocmd FileType python setlocal expandtab shiftwidth=4 softtabstop=4 tabstop=4 fileformat=unix
+autocmd FileType python set omnifunc=jedi#completions()
+
+" Shell scripts: Use 4 spaces (not tabs)
+autocmd FileType sh,bash setlocal expandtab shiftwidth=4 softtabstop=4 tabstop=4 fileformat=unix
+
+" JSON: Use 2-space indentation
+autocmd FileType json setlocal expandtab shiftwidth=2 softtabstop=2 tabstop=2
+
+" INI, Conf files: Use 4-space indentation
+autocmd FileType ini,conf setlocal expandtab shiftwidth=4 softtabstop=4 tabstop=4
+
+" Systemd unit files: Use 4-space indentation
+autocmd FileType systemd setlocal expandtab shiftwidth=4 softtabstop=4 tabstop=4
+autocmd BufRead,BufNewFile *.service,*.socket,*.device,*.mount,*.automount,*.swap,*.target,*.path,*.timer,*.slice,*.netdev,*.network,*.link setlocal filetype=systemd
+
+" Makefiles: Use tabs only (no spaces)
+autocmd FileType make setlocal noexpandtab shiftwidth=8 softtabstop=8 tabstop=8
+
+" Dockerfiles: Use 4-space indentation
+autocmd FileType dockerfile setlocal expandtab shiftwidth=4 softtabstop=4 tabstop=4
+autocmd BufRead,BufNewFile Dockerfile,Dockerfile.* setlocal filetype=dockerfile
+
+" Crontabs: Use 4-space indentation
+autocmd FileType crontab setlocal expandtab shiftwidth=4 softtabstop=4 tabstop=4
+
+" Logrotate configs: Use 4-space indentation
+autocmd FileType logrotate setlocal expandtab shiftwidth=4 softtabstop=4 tabstop=4
+autocmd BufRead,BufNewFile /etc/logrotate.conf,/etc/logrotate.d/* setlocal filetype=logrotate
+
+" SSH Configs: Use 4-space indentation
+autocmd FileType sshconfig setlocal expandtab shiftwidth=4 softtabstop=4 tabstop=4
+autocmd BufRead,BufNewFile ~/.ssh/config,/etc/ssh/sshd_config,/etc/ssh/ssh_config setlocal filetype=sshconfig
+
+" Sudoers file: Use 4-space indentation
+autocmd FileType sudoers setlocal expandtab shiftwidth=4 softtabstop=4 tabstop=4
+autocmd BufRead,BufNewFile /etc/sudoers,/etc/sudoers.d/* setlocal filetype=sudoers
+
+" Web development files
+autocmd BufNewFile,BufRead *.js, *,html, *.css setlocal expandtab shiftwidth=2 softtabstop=2 tabstop=2
+
+" Configure window split defaults
+set splitright
+set nosplitbelow
+
+" Do not let cursor scroll below or above N number of lines when scrolling.
+set scrolloff=10
+
+" Do not wrap lines. Allow long lines to extend as far as the line goes.
+set nowrap
+
+" While searching though a file incrementally highlight matching characters as you type.
+set incsearch
+
+" Ignore capital letters during search.
+set ignorecase
+
+" Override the ignorecase option if searching for capital letters.
+" This will allow you to search specifically for capital letters.
+set smartcase
+
+" Show partial command you type in the last line of the screen.
+set showcmd
+
+" Show the mode you are on the last line.
+set showmode
+
+" Show matching words during a search.
+set showmatch
+
+" Use highlighting when doing a search.
+set hlsearch
+
+" Enable auto completion menu after pressing TAB.
+set wildmenu
+
+" Make wildmenu behave like similar to Bash completion.
+set wildmode=list:longest
+
+" There are certain files that we would never want to edit with Vim.
+" Wildmenu will ignore files with these extensions.
+set wildignore=*.docx,*.jpg,*.png,*.gif,*.pdf,*.pyc,*.exe,*.flv,*.img,*.xlsx
+
+" Disable showing time
+set shortmess+=T
+
+" Disable the Arrow keys to force use of hjkl navigation
+noremap <Up> <Nop>
+noremap <Down> <Nop>
+noremap <Left> <Nop>
+noremap <Right> <Nop>
+
+call plug#begin()
+" List your plugins here
+Plug 'bling/vim-bufferline'
+Plug 'catppuccin/vim', { 'as': 'catppuccin' }
+Plug 'dense-analysis/ale'
+Plug 'frazrepo/vim-rainbow'
+Plug 'lepture/vim-jinja'
+Plug 'pearofducks/ansible-vim'
+Plug 'preservim/nerdtree'
+Plug 'preservim/vim-indent-guides'
+Plug 'preservim/nerdcommenter'
+Plug 'tpope/vim-fugitive'
+Plug 'tpope/vim-sensible'
+Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
+Plug 'davidhalter/jedi-vim'
+Plug 'tmsvg/pear-tree'
+Plug 'tpope/vim-surround'
+Plug 'tpope/vim-commentary'
+Plug 'christoomey/vim-tmux-navigator'
+
+" End of plugins
+call plug#end()
+
+
+" Configure vi-surround kemaps to match mini-surround"
+let g:surround_no_mappings = 1
+" Add (sa) - equivalent to vim-surround's 'ys' (Normal) and 'S' (Visual)
+nmap sa <Plug>Ysurround
+xmap sa <Plug>VSurround
+" Delete (sd) - equivalent to vim-surround's 'ds'
+nmap sd <Plug>Dsurround
+" Replace (sr) - equivalent to vim-surround's 'cs'
+nmap sr <Plug>Csurround
+
+" Configure ALE linting types
+let g:ale_linters = {
+    \ 'python': ['ruff', 'pyright'],
+    \ 'sh': ['shellcheck'],
+    \ 'yaml.ansible': ['ansible-lint'],
+    \ 'jinja': ['djlint']
+    \ }
+" Configure ALE Auto Formatting
+let g:ale_fixers = {
+    \'python': ['ruff', 'ruff-format']
+    \}
+
+
+" pear-tree configs
+let g:pear_tree_smart_openers = 1
+let g:pear_tree_smart_closers = 1
+let g:pear_tree_smart_backspace = 1
+
+" Ensure ALE runs on save
+let g:ale_lint_on_text_changed = 'never'
+let g:ale_lint_on_save = 1
+let g:ale_completion_enabled = 1
+let g:ale_fix_on_save = 1
+
+" Change ALE linting colors from default for readability
+let g:ale_sign_error=''
+hi ALEErrorSign ctermfg=232 ctermbg=160
+let g:ale_sign_warning=''
+hi ALEWarningSign ctermfg=15 ctermbg=166
+let g:ale_sign_info=''
+hi ALEInfoSign ctermfg=15 ctermbg=27
+
+" Disable line length linting errors
+let g:ale_python_flake8_options = '--max-line-length=0'
+let g:ale_sh_shellcheck_options = '--exclude=SC2129'
+let g:ale_jinja_djlint_options = '--ignore T002'
+let g:ale_yaml_ansible_lint_options = '--skip-list yaml[line-length]'
+
+" Enable jedi-vim
+let g:jedi#completions_enabled = 1
+let g:jedi#popup_on_dot = 1
+let python_highlight_all=1
+
+" Set color scheme
+colorscheme catppuccin_mocha
+
+" Activate Airline Configs
+let g:airline_theme = 'night_owl'
+set noshowmode
+let g:airline#extensions#tabline#enabled = 1
+let g:airline#extensions#ale#enabled = 1
+let g:airline#extensions#whitespace#enabled = 0
+let g:airline#extensions#bufferline#enabled = 1
+let g:airline_powerline_fonts = 1
+if !exists('g:airline_symbols')
+    let g:airline_symbols = {}
+endif
+" unicode symbols
+let g:airline_left_sep = '»'
+let g:airline_left_sep = '▶'
+let g:airline_right_sep = '«'
+let g:airline_right_sep = '◀'
+let g:airline_symbols.linenr = '␊'
+let g:airline_symbols.linenr = '␤'
+let g:airline_symbols.linenr = '¶'
+let g:airline_symbols.branch = '⎇'
+let g:airline_symbols.paste = 'ρ'
+let g:airline_symbols.paste = 'Þ'
+let g:airline_symbols.paste = '∥'
+let g:airline_symbols.whitespace = 'Ξ'
+" airline symbols
+let g:airline_left_sep = ''
+let g:airline_left_alt_sep = ''
+let g:airline_right_sep = ''
+let g:airline_right_alt_sep = ''
+let g:airline_symbols.branch = ''
+let g:airline_symbols.readonly = ''
+let g:airline_symbols.linenr = ''
+
+" NERDTree Config
+nnoremap <leader>n :NERDTreeFocus<CR>
+nnoremap <C-n> :NERDTree<CR>
+nnoremap <C-t> :NERDTreeToggle<CR>
+nnoremap <C-f> :NERDTreeFind<CR>
+
+" NERDCommenter Config
+let g:NERDCreateDefaultMappings = 1
+let g:NERDSpaceDelims = 1
+let g:NERDCompactSexyComs = 1
+let g:NERDDefaultAlign = 'left'
+let g:NERDCommentEmptyLines = 1
+let g:NERDTrimTrailingWhitespace = 1
+
+" Enable NERDCommenterToggle to check all selected lines is commented or not
+let g:NERDToggleCheckAllLines = 1
+" vim-indent-guides config
+let g:indent_guides_enable_on_vim_startup = 1
+let g:indent_guides_auto_colors = 1
+let g:indent_guides_start_level = 2
+let g:indent_guides_guide_size = 1

@@ -1,0 +1,39 @@
+[init]
+  defaultBranch = main # Use main instead of master
+
+[rebase]
+	autostash = true
+	autoSquash = true
+
+[color]
+  ui = auto
+
+[merge]
+  ff = only
+
+[pull]
+	; rebase = true
+
+[diff]
+  tool = nvimdiff
+	colorMoved = zebra
+
+[core]
+  editor = nvim
+  autocrlf = input
+
+[user]
+	name = Brian Merwin
+  email = brian.merwin@qtsdatacenters.com
+
+# Open nvim for merge conflicts
+[merge]
+    tool = nvimdiff
+
+[mergetool "nvimdiff"]
+  cmd = nvim -d "$LOCAL" "$MERGED" "$REMOTE"
+  prompt = false
+  keepBackup = false
+
+[fetch]
+	prune = true

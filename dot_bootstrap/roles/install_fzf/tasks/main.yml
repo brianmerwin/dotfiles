@@ -1,0 +1,53 @@
+---
+- name: Check if fzf is installed
+  ansible.builtin.stat:
+    path: "{{ lookup('env', 'HOME') }}/.local/bin/fzf"
+  register: fzf_installed
+
+- name: Get latest fzf version from GitHub (initial install)
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/junegunn/fzf/releases/latest
+    return_content: true
+  register: fzf_latest_release_init
+  when: not fzf_installed.stat.exists
+
+- name: Set fzf architecture fact
+  ansible.builtin.set_fact:
+    fzf_arch: "{{ 'amd64' if ansible_facts['architecture'] == 'x86_64' else 'arm64' }}"
+
+- name: Download and extract fzf
+  ansible.builtin.unarchive:
+    src: "https://github.com/junegunn/fzf/releases/download/{{ fzf_latest_release_init.json.tag_name }}/fzf-{{ fzf_latest_release_init.json.tag_name | regex_replace('^v', '') }}-linux_{{ fzf_arch }}.tar.gz"
+    dest: "{{ lookup('env', 'HOME') }}/.local/bin/"
+    remote_src: true
+  when: not fzf_installed.stat.exists
+
+# Update check
+- name: Get installed fzf version
+  ansible.builtin.command: "{{ lookup('env', 'HOME') }}/.local/bin/fzf --version"
+  register: fzf_installed_version
+  failed_when: false
+  changed_when: false
+  when: check_for_updates | bool
+
+- name: Get latest fzf version from GitHub
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/junegunn/fzf/releases/latest
+    return_content: true
+  register: fzf_latest_release
+  when: check_for_updates | bool
+
+- name: Determine if fzf update needed
+  ansible.builtin.set_fact:
+    fzf_needs_update: >-
+      {{ fzf_installed_version.rc != 0 or
+         (fzf_installed_version.stdout | regex_search('^[\\d.]+') | trim) !=
+         (fzf_latest_release.json.tag_name | regex_replace('^v', '') | trim) }}
+  when: check_for_updates | bool
+
+- name: Download and extract fzf update
+  ansible.builtin.unarchive:
+    src: "https://github.com/junegunn/fzf/releases/download/{{ fzf_latest_release.json.tag_name }}/fzf-{{ fzf_latest_release.json.tag_name | regex_replace('^v', '') }}-linux_{{ fzf_arch }}.tar.gz"
+    dest: "{{ lookup('env', 'HOME') }}/.local/bin/"
+    remote_src: true
+  when: check_for_updates | bool and fzf_needs_update | bool

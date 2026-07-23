@@ -1,0 +1,53 @@
+# If not running interactively, don't do anything
+case $- in
+*i*) ;;
+*) return ;;
+esac
+
+# Load unified environmental variables (same as .zshrc)
+source ~/.env_vars
+
+# append to the history file, don't overwrite it
+shopt -s histappend
+HISTSIZE=2000
+HISTFILESIZE=2000
+HISTCONTROL=ignoreboth
+
+# check the window size after each command and, if necessary,
+# update the values of LINES and COLUMNS.
+shopt -s checkwinsize
+
+# make 'less' more friendly for non-text input files, see lesspipe(1)
+[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+
+# set variable identifying the chroot you work in (used in the prompt below)
+if [ -z "${debian_chroot:-}" ] && [ -r /etc/debian_chroot ]; then
+  debian_chroot=$(cat /etc/debian_chroot)
+fi
+
+# Add an "alert" alias for long running commands.  Use like so:
+#   sleep 10; alert
+alias alert='notify-send --urgency=low -i "$([ $? = 0 ] && echo terminal || echo error)" "$(history|tail -n1|sed -e '\''s/^\s*[0-9]\+\s*//;s/[;&|]\s*alert$//'\'')"'
+
+# Enable bash auto-complete if the bash-completion package is installed
+if ! shopt -oq posix; then
+  if [ -f /usr/share/bash-completion/bash_completion ]; then
+    . /usr/share/bash-completion/bash_completion
+  elif [ -f /etc/bash_completion ]; then
+    . /etc/bash_completion
+  fi
+fi
+
+# Enable fzf integrations if installed
+[ -f "$HOME/.fzf.bash" ] && eval "$(fzf --bash)"
+
+# Ctrl+Alt+L to clear screen
+bind '"\e[1;5L": "clear\n"'
+
+# Uncomment to launch tmux automatically when launching a new shell session
+[ "$USER" != "root" ] && [ -z "$TMUX" ] && { tmux attach || exec tmux new-session -f ~/.tmux.conf; }
+
+# Launch Starship
+[ -n "$(command -v starship)" ] && eval "$(starship init bash)"
+
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash

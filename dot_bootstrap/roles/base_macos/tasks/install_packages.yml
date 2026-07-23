@@ -1,0 +1,6 @@
+---
+- name: install_packages | Deploy macOS packages via Homebrew
+  community.general.homebrew:
+    name: "{{ macos_packages }}"
+    state: present
+    path: "{{ lookup('env', 'HOME') }}/.homebrew/bin"

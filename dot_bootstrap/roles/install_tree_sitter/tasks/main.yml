@@ -1,0 +1,55 @@
+---
+- name: Check if tree-sitter is installed
+  ansible.builtin.stat:
+    path: "{{ lookup('env', 'HOME') }}/.local/bin/tree-sitter"
+  register: tree_sitter_installed
+
+- name: Ensure ~/.local/bin exists
+  ansible.builtin.file:
+    path: "{{ lookup('env', 'HOME') }}/.local/bin"
+    state: directory
+    mode: '0755'
+  when: not tree_sitter_installed.stat.exists
+
+- name: Get latest tree-sitter release
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/tree-sitter/tree-sitter/releases/latest
+    return_content: true
+  register: tree_sitter_release
+  when: not tree_sitter_installed.stat.exists
+
+- name: Set tree-sitter version fact
+  ansible.builtin.set_fact:
+    tree_sitter_version: "{{ tree_sitter_release.json.tag_name | regex_replace('^v', '') }}"
+  when: not tree_sitter_installed.stat.exists
+
+- name: Download tree-sitter binary
+  ansible.builtin.get_url:
+    url: "https://github.com/tree-sitter/tree-sitter/releases/download/v{{ tree_sitter_version }}/tree-sitter-linux-{{ 'x64' if ansible_facts['architecture'] == 'x86_64' else 'arm64' }}.gz"
+    dest: /tmp/tree-sitter.gz
+    mode: '0644'
+  when: not tree_sitter_installed.stat.exists
+
+- name: Extract tree-sitter binary
+  ansible.builtin.unarchive:
+    src: /tmp/tree-sitter.gz
+    dest: /tmp
+    remote_src: true
+  when: not tree_sitter_installed.stat.exists
+
+- name: Install tree-sitter binary
+  ansible.builtin.copy:
+    src: /tmp/tree-sitter
+    dest: "{{ lookup('env', 'HOME') }}/.local/bin/tree-sitter"
+    remote_src: true
+    mode: '0755'
+  when: not tree_sitter_installed.stat.exists
+
+- name: Remove temporary tree-sitter files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/tree-sitter.gz
+    - /tmp/tree-sitter
+  when: not tree_sitter_installed.stat.exists

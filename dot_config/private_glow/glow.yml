@@ -1,0 +1,9 @@
+style: "dracula"
+
+# mouse support (TUI-mode only)
+mouse: true
+pager: false
+width: 120
+
+# show all files, including hidden and ignored.
+all: false

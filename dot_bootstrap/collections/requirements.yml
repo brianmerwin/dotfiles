@@ -1,0 +1,16 @@
+---
+# Installing required ansible-galaxy collections
+collections:
+  - name: ansible.posix
+  - name: ansible.utils
+  - name: community.general
+  # - name: ansible.network
+#  - name: community.vmware
+#  - name: vmware.vmware
+#  - name: cisco.ios
+#  - name: ansible.snmp
+#  - name: community.dns
+#  - name: amazon.aws
+#  - name: onepassword.connect
+#  - name: ansible.netcommon
+...

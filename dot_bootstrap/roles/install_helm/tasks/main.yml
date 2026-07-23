@@ -1,0 +1,62 @@
+---
+- name: Check if helm is installed
+  ansible.builtin.stat:
+    path: "{{ lookup('env', 'HOME') }}/.local/bin/helm"
+  register: helm_installed
+
+- name: Set helm architecture fact
+  ansible.builtin.set_fact:
+    helm_arch: "{{ 'amd64' if ansible_facts['architecture'] == 'x86_64' else 'arm64' }}"
+
+# Initial install
+- name: Get latest helm version from GitHub
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/helm/helm/releases/latest
+    return_content: true
+  register: helm_latest_release
+  when: not helm_installed.stat.exists
+
+- name: Download and install helm
+  ansible.builtin.unarchive:
+    src: "https://get.helm.sh/helm-{{ helm_latest_release.json.tag_name }}-linux-{{ helm_arch }}.tar.gz"
+    dest: "{{ lookup('env', 'HOME') }}/.local/bin/"
+    remote_src: true
+    include:
+      - "linux-{{ helm_arch }}/helm"
+    extra_opts:
+      - "--strip-components=1"
+  when: not helm_installed.stat.exists
+
+# Update check
+- name: Get installed helm version
+  ansible.builtin.command: "{{ lookup('env', 'HOME') }}/.local/bin/helm version --short"
+  register: helm_installed_version
+  failed_when: false
+  changed_when: false
+  when: check_for_updates | bool
+
+- name: Get latest helm version from GitHub for update
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/helm/helm/releases/latest
+    return_content: true
+  register: helm_latest_release_update
+  when: check_for_updates | bool
+
+- name: Determine if helm update needed
+  ansible.builtin.set_fact:
+    helm_needs_update: >-
+      {{ helm_installed_version.rc != 0 or
+         (helm_installed_version.stdout | regex_replace('\+.*', '') | regex_replace('^v', '')) !=
+         (helm_latest_release_update.json.tag_name | regex_replace('^v', '')) }}
+  when: check_for_updates | bool
+
+- name: Download and install helm update
+  ansible.builtin.unarchive:
+    src: "https://get.helm.sh/helm-{{ helm_latest_release_update.json.tag_name }}-linux-{{ helm_arch }}.tar.gz"
+    dest: "{{ lookup('env', 'HOME') }}/.local/bin/"
+    remote_src: true
+    include:
+      - "linux-{{ helm_arch }}/helm"
+    extra_opts:
+      - "--strip-components=1"
+  when: check_for_updates | bool and helm_needs_update | bool

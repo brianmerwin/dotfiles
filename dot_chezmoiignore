@@ -1,0 +1,28 @@
+# Configure chezmoi to ignore these patterns within managed directories
+
+#nvim manifest
+**/.config/nvim/lazy-lock.json
+**/session.vim
+**/*.key
+**/*.pem
+**/__pycache__
+**/Pipfile.lock
+**/uv.lock
+**/.tmp
+**/.bkp
+**/.git
+**/.cache
+.antidote/tests/tmp_home
+.antidote/tests/tmp_home/*
+.bootstrap/tmp
+.ansible
+.antidote/*
+!.antidote/antidote
+!.antidote/antidote.zsh
+!.antidote/init.zsh
+
+.venv
+**.venv
+
+**/.bootstrap/collections/*
+!.bootstrap/collections/requirements.yml

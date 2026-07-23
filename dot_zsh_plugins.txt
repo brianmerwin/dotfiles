@@ -1,0 +1,43 @@
+ list of zsh plugins to be managed via antitode
+
+# Enable oh-my-zsh plugins - must be first
+getantidote/use-omz
+
+
+#zsh general
+zsh-users/zsh-autosuggestions
+zsh-users/zsh-syntax-highlighting
+hcgraf/zsh-sudo
+jgogstad/zsh-mask
+joshskidmore/zsh-fzf-history-search
+
+#oh-my-zsh plugins
+ohmyzsh/ohmyzsh path:lib
+ohmyzsh/ohmyzsh path:plugins/chezmoi
+ohmyzsh/ohmyzsh path:plugins/colored-man-pages
+ohmyzsh/ohmyzsh path:plugins/copybuffer
+ohmyzsh/ohmyzsh path:plugins/copyfile
+ohmyzsh/ohmyzsh path:plugins/copypath
+ohmyzsh/ohmyzsh path:plugins/dirhistory
+ohmyzsh/ohmyzsh path:plugins/docker-compose
+ohmyzsh/ohmyzsh path:plugins/extract
+ohmyzsh/ohmyzsh path:plugins/gh
+#ohmyzsh/ohmyzsh path:plugins/git
+#ohmyzsh/ohmyzsh path:plugins/git-prompt
+ohmyzsh/ohmyzsh path:plugins/rsync
+ohmyzsh/ohmyzsh path:plugins/ssh
+ohmyzsh/ohmyzsh path:plugins/web-search
+ohmyzsh/ohmyzsh path:plugins/history-substring-search
+
+
+
+# https://github.com/hlissner/zsh-autopair
+hlissner/zsh-autopair
+
+# Code
+# MichaelAquilina/zsh-autoswitch-virtualenv
+empresslabs/gitprofiles.plugin.zsh #https://github.com/empresslabs/gitprofiles.plugin.zsh 
+
+# auto completions
+#mattmc3/ez-compinit
+#zsh-users/zsh-completions

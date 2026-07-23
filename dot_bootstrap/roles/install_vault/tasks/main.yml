@@ -1,0 +1,85 @@
+---
+- name: Check if vault is installed
+  ansible.builtin.stat:
+    path: "{{ lookup('env', 'HOME') }}/.local/bin/vault"
+  register: vault_installed
+
+- name: Get latest vault version from GitHub (initial install)
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/hashicorp/vault/releases/latest
+    return_content: true
+  register: vault_latest_release_init
+  when: not vault_installed.stat.exists
+
+- name: Set Vault version facts (initial install)
+  ansible.builtin.set_fact:
+    vault_version: "{{ vault_latest_release_init.json.tag_name | regex_replace('^v', '') }}"
+    vault_arch: "{{ 'amd64' if ansible_facts['architecture'] == 'x86_64' else 'arm64' }}"
+  when: not vault_installed.stat.exists
+
+- name: Download Vault binary
+  ansible.builtin.get_url:
+    url: "https://releases.hashicorp.com/vault/{{ vault_version }}/vault_{{ vault_version }}_linux_{{ vault_arch }}.zip"
+    dest: /tmp/vault.zip
+  when: not vault_installed.stat.exists
+
+- name: Extract Vault binary
+  ansible.builtin.unarchive:
+    src: /tmp/vault.zip
+    dest: "{{ lookup('env', 'HOME') }}/.local/bin/"
+    remote_src: true
+  when: not vault_installed.stat.exists
+
+- name: Remove Vault archive
+  ansible.builtin.file:
+    path: /tmp/vault.zip
+    state: absent
+  when: not vault_installed.stat.exists
+
+# Update check
+- name: Get installed vault version
+  ansible.builtin.command: "{{ lookup('env', 'HOME') }}/.local/bin/vault --version"
+  register: vault_installed_version
+  failed_when: false
+  changed_when: false
+  when: check_for_updates | bool
+
+- name: Get latest vault version from GitHub
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/hashicorp/vault/releases/latest
+    return_content: true
+  register: vault_latest_release
+  when: check_for_updates | bool
+
+- name: Set vault latest version
+  ansible.builtin.set_fact:
+    vault_latest_version: "{{ vault_latest_release.json.tag_name | regex_replace('^v', '') }}"
+    vault_arch: "{{ 'amd64' if ansible_facts['architecture'] == 'x86_64' else 'arm64' }}"
+  when: check_for_updates | bool
+
+- name: Determine if vault update needed
+  ansible.builtin.set_fact:
+    vault_needs_update: >-
+      {{ vault_installed_version.rc != 0 or
+         (vault_installed_version.stdout | regex_search('\\d+\\.\\d+\\.\\d+') | trim) !=
+         vault_latest_version | trim }}
+  when: check_for_updates | bool
+
+- name: Download Vault binary for update
+  ansible.builtin.get_url:
+    url: "https://releases.hashicorp.com/vault/{{ vault_latest_version }}/vault_{{ vault_latest_version }}_linux_{{ vault_arch }}.zip"
+    dest: /tmp/vault.zip
+  when: check_for_updates | bool and vault_needs_update | bool
+
+- name: Extract Vault binary for update
+  ansible.builtin.unarchive:
+    src: /tmp/vault.zip
+    dest: "{{ lookup('env', 'HOME') }}/.local/bin/"
+    remote_src: true
+  when: check_for_updates | bool and vault_needs_update | bool
+
+- name: Remove Vault archive
+  ansible.builtin.file:
+    path: /tmp/vault.zip
+    state: absent
+  when: check_for_updates | bool

@@ -1,0 +1,36 @@
+# ~/.config/uv/uv.toml
+# User-level uv configuration with recommended defaults
+
+# Use system certificate store instead of bundled Mozilla certificates
+system-certs = true
+
+# Enable compile-time bytecode generation for faster imports
+compile-bytecode = true
+
+# Use concurrent installations for better performance (default is optimal)
+concurrent-installs = 4
+
+# Link mode: "clone" on systems that support it, "copy" otherwise
+# "clone" uses copy-on-write for faster installs and less disk space
+link-mode = "clone"
+
+# Resolution strategy: "highest" gets latest compatible versions (default)
+# Alternatives: "lowest-direct" for minimal versions
+resolution = "highest"
+
+# Prerelease handling: "disallow" by default is safer for production
+# Change to "allow" if you want to test prereleases
+prerelease = "disallow"
+exclude-newer = "3 days"
+
+# Custom PyPI index - uncomment to add private registries
+# [[index]]
+# name = "company-pypi"
+# url = "https://pypi.company.com/simple"
+# default = false  # Set true to make this the primary index
+
+# Override dependency metadata for problematic packages
+# [dependency-metadata]
+# Useful when a package has incorrect metadata that breaks resolution
+# my-broken-package = { version = "1.2.3" }
+

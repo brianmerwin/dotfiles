@@ -1,0 +1,103 @@
+---
+- name: Configure Docker CE Package Repo (RHEL)
+  when: ansible_facts['distribution'] == 'RedHat'
+  block:
+    - name: Import Docker GPG key (RHEL)
+      ansible.builtin.rpm_key:
+        key: https://download.docker.com/linux/rhel/gpg
+        state: present
+
+    - name: Add Docker CE repository (RHEL)
+      ansible.builtin.yum_repository:
+        name: docker-ce-stable
+        description: Docker CE Stable - $basearch
+        baseurl: https://download.docker.com/linux/centos/$releasever/$basearch/stable
+        enabled: true
+        gpgcheck: true
+        gpgkey: https://download.docker.com/linux/rhel/gpg
+
+- name: Configure Docker CE Package Repo (Rocky/CentOS)
+  when: ansible_facts['distribution'] in ['Rocky', 'CentOS']
+  block:
+    - name: Import Docker GPG key (Rocky/CentOS)
+      ansible.builtin.rpm_key:
+        key: https://download.docker.com/linux/centos/gpg
+        state: present
+
+    - name: Add Docker CE repository (Rocky/CentOS)
+      ansible.builtin.yum_repository:
+        name: docker-ce-stable
+        description: Docker CE Stable - $basearch
+        baseurl: https://download.docker.com/linux/centos/$releasever/$basearch/stable
+        enabled: true
+        gpgcheck: true
+        gpgkey: https://download.docker.com/linux/centos/gpg
+
+- name: Configure Docker CE Package Repo (Debian/Ubuntu)
+  when: ansible_facts['os_family'] == "Debian"
+  block:
+    - name: Install Debian prerequisites
+      ansible.builtin.apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+        state: present
+        update_cache: true
+
+    - name: Create keyrings directory
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Download Docker GPG key
+      ansible.builtin.get_url:
+        url: "https://download.docker.com/linux/{{ ansible_facts['distribution'] | lower }}/gpg"
+        dest: /etc/apt/keyrings/docker.asc
+        mode: '0644'
+
+    - name: Add Docker CE repository
+      ansible.builtin.apt_repository:
+        repo: >-
+          deb [arch={{ 'amd64' if ansible_facts['architecture'] == 'x86_64' else 'arm64' }} signed-by=/etc/apt/keyrings/docker.asc]
+          https://download.docker.com/linux/{{ ansible_facts['distribution'] | lower }}
+          {{ ansible_facts['distribution_release'] }} stable
+        state: present
+        filename: docker-ce
+
+# Podman must be removed if using docker as they conflict
+- name: Remove Podman components (RHEL)
+  ansible.builtin.dnf:
+    name:
+      - podman
+      - podman-docker
+      - podman-compose
+      - buildah
+      - skopeo
+    state: absent
+  when: ansible_facts['os_family'] == 'RedHat'
+
+- name: Remove Podman components (Debian)
+  ansible.builtin.apt:
+    name:
+      - podman
+      - buildah
+      - skopeo
+    state: absent
+  when: ansible_facts['os_family'] == 'Debian'
+
+- name: Install Docker components
+  ansible.builtin.package:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - docker-compose-plugin
+      - containerd.io
+    state: present
+
+- name: Enable and start Docker service
+  ansible.builtin.service:
+    name: docker.service
+    enabled: true
+    state: started

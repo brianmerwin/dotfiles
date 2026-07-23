@@ -1,0 +1,24 @@
+---
+- name: Install nb notebook CLI
+  block:
+    - name: Ensure ~/.local/bin/nb directory exists
+      ansible.builtin.file:
+        path: "{{ lookup('env', 'HOME') }}/.local/bin/"
+        state: directory
+        mode: '0755'
+
+    - name: Download nb
+      ansible.builtin.get_url:
+        url: https://raw.github.com/xwmx/nb/master/nb
+        dest: "{{ lookup('env', 'HOME') }}/.local/bin/nb"
+        mode: '0755'
+
+    - name: Install nb completions
+      ansible.builtin.command:
+        cmd: "{{ lookup('env', 'HOME') }}/.local/bin/nb completions install --download"
+      changed_when: false
+
+    - name: Install nb environment
+      ansible.builtin.command:
+        cmd: "{{ lookup('env', 'HOME') }}/.local/bin/nb env install"
+      changed_when: false

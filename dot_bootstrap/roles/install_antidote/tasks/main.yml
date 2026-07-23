@@ -1,0 +1,13 @@
+---
+- name: Check if Antidote is installed
+  ansible.builtin.stat:
+    path: "{{ lookup('env', 'HOME') }}/.antidote/antidote.zsh"
+  register: antidote_installed
+
+- name: Clone Antidote zsh plugin manager
+  ansible.builtin.git:
+    repo: https://github.com/mattmc3/antidote.git
+    dest: "{{ lookup('env', 'HOME') }}/.antidote"
+    depth: 1
+  become: false
+  when: not antidote_installed.stat.exists

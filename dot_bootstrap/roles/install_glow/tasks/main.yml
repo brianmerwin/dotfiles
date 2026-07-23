@@ -1,0 +1,61 @@
+---
+- name: Check if glow is installed
+  ansible.builtin.stat:
+    path: "{{ lookup('env', 'HOME') }}/.local/bin/glow"
+  register: glow_installed
+
+- name: Set glow architecture fact
+  ansible.builtin.set_fact:
+    glow_arch: "{{ 'arm64' if ansible_facts['architecture'] == 'aarch64' else 'x86_64' }}"
+
+- name: Set glow OS fact
+  ansible.builtin.set_fact:
+    glow_os: "{{ 'Darwin' if ansible_facts['os_family'] == 'Darwin' else 'Linux' }}"
+
+# Initial install
+- name: Get latest glow version from GitHub (initial install)
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/charmbracelet/glow/releases/latest
+    return_content: true
+  register: glow_latest_release_init
+  when: not glow_installed.stat.exists
+
+- name: Download and extract glow
+  ansible.builtin.shell:
+    cmd: >-
+      curl -fsSL "https://github.com/charmbracelet/glow/releases/download/{{ glow_latest_release_init.json.tag_name }}/glow_{{ glow_latest_release_init.json.tag_name | regex_replace('^v', '') }}_{{ glow_os }}_{{ glow_arch }}.tar.gz"
+      | tar xz --strip-components=1 -C "{{ lookup('env', 'HOME') }}/.local/bin/"
+  changed_when: true
+  when: not glow_installed.stat.exists
+
+# Update check
+- name: Get installed glow version
+  ansible.builtin.command: "{{ lookup('env', 'HOME') }}/.local/bin/glow --version"
+  register: glow_installed_version
+  failed_when: false
+  changed_when: false
+  when: check_for_updates | bool
+
+- name: Get latest glow version from GitHub
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/charmbracelet/glow/releases/latest
+    return_content: true
+  register: glow_latest_release
+  when: check_for_updates | bool
+
+- name: Determine if glow update needed
+  ansible.builtin.set_fact:
+    glow_needs_update: >-
+      {{ glow_installed_version.rc != 0 or
+         (glow_installed_version.stdout |
+          regex_search('[\\d]+\\.[\\d]+\\.[\\d]+') | trim) !=
+         (glow_latest_release.json.tag_name | regex_replace('^v', '') | trim) }}
+  when: check_for_updates | bool
+
+- name: Download and extract glow update
+  ansible.builtin.shell:
+    cmd: >-
+      curl -fsSL "https://github.com/charmbracelet/glow/releases/download/{{ glow_latest_release.json.tag_name }}/glow_{{ glow_latest_release.json.tag_name | regex_replace('^v', '') }}_{{ glow_os }}_{{ glow_arch }}.tar.gz"
+      | tar xz --strip-components=1 -C "{{ lookup('env', 'HOME') }}/.local/bin/"
+  changed_when: true
+  when: check_for_updates | bool and glow_needs_update | bool

@@ -1,0 +1,51 @@
+---
+# Packages with the same name on all supported distros
+common_packages:
+  - age
+  - bash-completion
+  - flatpak
+  - gcc
+  - git
+  - git-crypt
+  - gpg
+  - htop
+  - jq
+  - nmap
+  - openssl
+  - ripgrep
+  - tmux
+  - tree
+  - virt-manager
+  - xclip
+  - yq
+  - zsh
+
+# RHEL / Fedora / Rocky / Alma specific packages
+redhat_packages:
+  - "@Development Tools"
+  - bat
+  - gh
+  - lua
+  - luarocks
+  - nodejs
+  - npm
+  - python3.12
+  - rust
+  - syncthing
+  - tldr
+
+# Debian / Ubuntu specific packages
+debian_packages:
+  - batcat
+  - gh
+  - needrestart
+  - nodejs
+  - npm
+  - python3.12
+  - software-properties-common
+  - sqlitebrowser
+  - syncthing
+  - tldr
+  - ttf-mscorefonts-installer
+  - unclutter-xfixes
+  - indicator-sound-switcher

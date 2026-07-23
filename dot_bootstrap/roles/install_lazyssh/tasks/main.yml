@@ -1,0 +1,44 @@
+---
+- name: Check if lazyssh is installed
+  ansible.builtin.stat:
+    path: "{{ lookup('env', 'HOME') }}/.local/bin/lazyssh"
+  register: lazyssh_installed
+
+- name: Ensure ~/.local/bin exists
+  ansible.builtin.file:
+    path: "{{ lookup('env', 'HOME') }}/.local/bin"
+    state: directory
+    mode: '0755'
+  when: not lazyssh_installed.stat.exists
+
+- name: Get latest lazyssh release
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/Adembc/lazyssh/releases/latest
+    return_content: true
+  register: lazyssh_release
+  when: not lazyssh_installed.stat.exists
+
+- name: Set lazyssh version fact
+  ansible.builtin.set_fact:
+    lazyssh_version: "{{ lazyssh_release.json.tag_name }}"
+  when: not lazyssh_installed.stat.exists
+
+- name: Download lazyssh
+  ansible.builtin.get_url:
+    url: "https://github.com/Adembc/lazyssh/releases/download/{{ lazyssh_version }}/lazyssh_{{ ansible_facts['system'] }}_{{ ansible_facts['architecture'] }}.tar.gz"
+    dest: /tmp/lazyssh.tar.gz
+    mode: '0644'
+  when: not lazyssh_installed.stat.exists
+
+- name: Extract lazyssh binary
+  ansible.builtin.unarchive:
+    src: /tmp/lazyssh.tar.gz
+    dest: "{{ lookup('env', 'HOME') }}/.local/bin"
+    remote_src: true
+  when: not lazyssh_installed.stat.exists
+
+- name: Remove downloaded tarball
+  ansible.builtin.file:
+    path: /tmp/lazyssh.tar.gz
+    state: absent
+  when: not lazyssh_installed.stat.exists

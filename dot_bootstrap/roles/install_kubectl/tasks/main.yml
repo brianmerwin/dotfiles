@@ -1,0 +1,67 @@
+---
+- name: Check if kubectl is installed
+  ansible.builtin.stat:
+    path: "{{ lookup('env', 'HOME') }}/.local/bin/kubectl"
+  register: kubectl_installed
+
+- name: Get latest kubectl version (initial install)
+  ansible.builtin.get_url:
+    url: https://dl.k8s.io/release/stable.txt
+    dest: /tmp/kubectl-version.txt
+    mode: '0644'
+  when: not kubectl_installed.stat.exists
+
+- name: Register kubectl version (initial install)
+  ansible.builtin.set_fact:
+    kubectl_version: "{{ lookup('file', '/tmp/kubectl-version.txt') }}"
+    kubectl_arch: "{{ 'amd64' if ansible_facts['architecture'] == 'x86_64' else 'arm64' }}"
+  when: not kubectl_installed.stat.exists
+
+- name: Download kubectl binary
+  ansible.builtin.get_url:
+    url: "https://dl.k8s.io/release/{{ kubectl_version }}/bin/linux/{{ kubectl_arch }}/kubectl"
+    dest: "{{ lookup('env', 'HOME') }}/.local/bin/kubectl"
+    mode: '0755'
+  when: not kubectl_installed.stat.exists
+
+# Update check
+- name: Get installed kubectl version
+  ansible.builtin.command: "{{ lookup('env', 'HOME') }}/.local/bin/kubectl version --client -o json"
+  register: kubectl_installed_json
+  failed_when: false
+  changed_when: false
+  when: check_for_updates | bool
+
+- name: Parse installed kubectl version
+  ansible.builtin.set_fact:
+    kubectl_installed_version: >-
+      {{ (kubectl_installed_json.stdout | from_json).clientVersion.gitVersion
+         if kubectl_installed_json.rc == 0 else '0.0.0' }}
+  when: check_for_updates | bool
+
+- name: Get latest kubectl version for update
+  ansible.builtin.get_url:
+    url: https://dl.k8s.io/release/stable.txt
+    dest: /tmp/kubectl-version.txt
+    mode: '0644'
+  when: check_for_updates | bool
+
+- name: Set kubectl target version
+  ansible.builtin.set_fact:
+    kubectl_version: "{{ lookup('file', '/tmp/kubectl-version.txt') }}"
+    kubectl_arch: "{{ 'amd64' if ansible_facts['architecture'] == 'x86_64' else 'arm64' }}"
+  when: check_for_updates | bool
+
+- name: Determine if kubectl update needed
+  ansible.builtin.set_fact:
+    kubectl_needs_update: >-
+      {{ kubectl_installed_version | regex_replace('^v', '') | trim !=
+         kubectl_version | regex_replace('^v', '') | trim }}
+  when: check_for_updates | bool
+
+- name: Download kubectl binary for update
+  ansible.builtin.get_url:
+    url: "https://dl.k8s.io/release/{{ kubectl_version }}/bin/linux/{{ kubectl_arch }}/kubectl"
+    dest: "{{ lookup('env', 'HOME') }}/.local/bin/kubectl"
+    mode: '0755'
+  when: check_for_updates | bool and kubectl_needs_update | bool

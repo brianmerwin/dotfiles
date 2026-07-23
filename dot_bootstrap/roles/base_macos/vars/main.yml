@@ -1,0 +1,32 @@
+---
+macos_packages:
+  - age
+  - bash-completion
+  - bat
+  - fzf
+  - gcc
+  - gh
+  - git
+  - git-crypt
+  - gnupg
+  - helm
+  - htop
+  - jq
+  - kubectl
+  - lua
+  - luarocks
+  - neovim
+  - node
+  - nmap
+  - python@3.12
+  - ripgrep
+  - rust
+  - starship
+  - syncthing
+  - tmux
+  - tree
+  - tree-sitter
+  - tldr
+  - vault
+  - yq
+  - lazygit

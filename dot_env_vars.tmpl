@@ -1,0 +1,136 @@
+# Environmental variables and aliases for zsh and bash
+
+################################
+#           Env                #
+################################
+export BAT_CONFIG_DIR="$HOME/.config/bat"
+export BAT_CONFIG_PATH="$HOME/.config/bat/bat_config.conf"
+
+export NB_BROWSE_SUPPORT_LINKS=0
+export NB_AUT0_SYNC=1
+export NB_MARKDOWN_TOOL=glow
+
+# PATH construction (all user paths added here)
+export PATH="$HOME/.opencode/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
+export PATH="$HOME/go/bin:$PATH"
+{{- if ne .chezmoi.os "darwin" }}
+export PATH="/opt/microsoft/powershell/7:$PATH"
+{{- end }}
+
+export TERM="xterm-256color"
+
+export LC_ALL="en_US.UTF-8"
+export LANG="en_US.UTF-8"
+
+{{- if ne .chezmoi.os "darwin" }}
+export PSHOME="/opt/microsoft/powershell/7/"
+{{- end }}
+
+# Force UV to use it's tls certs rather than defaults installed in the OS
+export UV_SYSTEM_CERTS=true
+
+{{- if ne .chezmoi.os "darwin" }}
+# Set DISPLAY - required for WSL
+export DISPLAY="$(grep -m1 nameserver /etc/resolv.conf | awk '{print $2}'):0"
+export LIBGL_ALWAYS_INDIRECT=1
+{{- end }}
+
+# Set nvim as default editor if installed
+if [ -n "$(command -v nvim)" ]; then
+    export EDITOR='nvim'
+    export VISUAL='nvim'
+elif [ -n "$(command -v vim)" ]; then
+    export EDITOR='vim'
+    export VISUAL='vim'
+fi
+
+
+
+# If 1Password is installed, use the ssh-agent
+[ -e "$HOME/.1password/agent.sock" ] && export SSH_AUTH_SOCK="$HOME/.1password/agent.sock"
+
+################################
+#           Aliases            #
+################################
+
+# cheat if tldr isn't avialable
+function cheat() {
+  if [ -n "$(command -v curl)" ]; then
+        curl  "https://cheat.sh/$1"
+    else
+        wget -qO- "https://cheat.sh/$1"
+    fi
+}
+
+# bat setup
+if [ -n "$(command -v bat)" ]; then
+  alias cat="bat"
+elif [ -n "$(command -v batcat)" ]; then
+  alias cat="batcat"
+  alias bat="batcat"
+fi
+
+if [ -n "$(command -v nvim)" ]; then
+    alias vi='nvim'
+    alias vim='nvim'
+elif [ -n "$(command -v vim )" ]; then
+    alias vi='vim'
+fi
+
+# Shell Common
+{{- if eq .chezmoi.os "darwin" }}
+alias l="ls -C -G"
+alias la="ls -a -G"
+alias ld="ls -aldf */ -G"
+alias ll="ls -lHs -G"
+alias ls="ls -h -G"
+{{- else }}
+alias l="ls -C --color=auto"
+alias la="ls -a --color=auto"
+alias ld="ls -aldf */ --color=auto"
+alias ll="ls -lHs --color=auto"
+alias ls="ls -h --color=auto"
+{{- end }}
+alias sudo="sudo -E"
+alias tree="tree -a -C"
+alias hs="history | grep -i"
+{{- if ne .chezmoi.os "darwin" }}
+alias ip="ip -brief"
+{{- end }}
+
+#Python
+alias py="python3"
+alias python="python3"
+alias vactivate="source ./.venv/bin/activate"
+
+# Kubernetes
+if [ -n "$(command -v kubectl)" ]; then
+{{- if ne .chezmoi.os "darwin" }}
+  # Enable kubectl auto-completion
+  source <(kubectl completion zsh)
+  compdef k=kubectl
+  compdef _kubectl kubectl
+{{- end }}
+  alias k="kubectl"
+  alias kc="kubectl create"
+  alias kd="kubectl describe"
+  alias kdr="kubectl --dry-run"
+  alias ke="kubectl edit"
+  alias kg="kubectl get -o wide"
+  alias kpf="kubectl port-forward"
+  alias kr="kubectl run"
+  alias ks="kubectl set"
+fi
+
+alias powershell="pwsh"
+
+alias opencode="opencode --agent plan"
+alias oc="opencode"
+alias lg="lazygit"
+alias nb="nb -i"
+alias nba="nb add"
+
+
+# Single AWK deduplication (removes duplicates and ~/bin while preserving order)
+export PATH="$(echo "$PATH" | awk -v RS=: -v home="$HOME" '$0 != home"/bin" && !seen[$0]++ {printf "%s%s", (NR==1 ? "" : ":"), $0}')"

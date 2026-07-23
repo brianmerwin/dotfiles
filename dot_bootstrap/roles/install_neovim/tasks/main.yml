@@ -1,0 +1,96 @@
+---
+- name: Ensure ~/.local/bin exists
+  ansible.builtin.file:
+    path: "{{ lookup('env', 'HOME') }}/.local/bin"
+    state: directory
+    mode: '0755'
+
+- name: Set neovim OS
+  ansible.builtin.set_fact:
+    neovim_os: "{{ (ansible_facts['os_family'] == 'Darwin') | ternary('macos', 'linux') }}"
+
+- name: Set neovim architecture
+  ansible.builtin.set_fact:
+    neovim_arch: "{{ (ansible_facts['architecture'] == 'x86_64') | ternary('x86_64', 'arm64') }}"
+
+- name: Set neovim platform
+  ansible.builtin.set_fact:
+    neovim_platform: "{{ neovim_os }}-{{ neovim_arch }}"
+
+- name: Check if neovim binary exists
+  ansible.builtin.stat:
+    path: "{{ lookup('env', 'HOME') }}/.local/bin/nvim"
+  register: neovim_binary
+
+# Initial install
+- name: Get latest neovim version from GitHub
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/neovim/neovim/releases/latest
+    return_content: true
+  register: neovim_latest_release
+  when: not neovim_binary.stat.exists
+
+- name: Remove old neovim installation if present
+  ansible.builtin.file:
+    path: "{{ lookup('env', 'HOME') }}/.local/nvim-{{ neovim_platform }}"
+    state: absent
+  when: not neovim_binary.stat.exists
+
+- name: Download and extract neovim
+  ansible.builtin.unarchive:
+    src: "https://github.com/neovim/neovim/releases/download/{{ neovim_latest_release.json.tag_name }}/nvim-{{ neovim_platform }}.tar.gz"
+    dest: "{{ lookup('env', 'HOME') }}/.local/"
+    remote_src: true
+  when: not neovim_binary.stat.exists
+
+- name: Symlink neovim binary to ~/.local/bin
+  ansible.builtin.file:
+    src: "{{ lookup('env', 'HOME') }}/.local/nvim-{{ neovim_platform }}/bin/nvim"
+    dest: "{{ lookup('env', 'HOME') }}/.local/bin/nvim"
+    state: link
+    force: true
+  when: not neovim_binary.stat.exists
+
+# Update check
+- name: Get installed neovim version
+  ansible.builtin.command: "{{ lookup('env', 'HOME') }}/.local/bin/nvim --version"
+  register: neovim_installed_version
+  failed_when: false
+  changed_when: false
+  when: check_for_updates | bool
+
+- name: Get latest neovim version from GitHub for update
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/neovim/neovim/releases/latest
+    return_content: true
+  register: neovim_latest_release_update
+  when: check_for_updates | bool
+
+- name: Determine if neovim update needed
+  ansible.builtin.set_fact:
+    neovim_needs_update: >-
+      {{ neovim_installed_version.rc != 0 or
+         (neovim_installed_version.stdout | regex_search('v[\\d.]+') | regex_replace('^v', '') | trim) !=
+         (neovim_latest_release_update.json.tag_name | regex_replace('^v', '') | trim) }}
+  when: check_for_updates | bool
+
+- name: Remove old neovim installation for update
+  ansible.builtin.file:
+    path: "{{ lookup('env', 'HOME') }}/.local/nvim-{{ neovim_platform }}"
+    state: absent
+  when: check_for_updates | bool and neovim_needs_update | bool
+
+- name: Download and extract neovim update
+  ansible.builtin.unarchive:
+    src: "https://github.com/neovim/neovim/releases/download/{{ neovim_latest_release_update.json.tag_name }}/nvim-{{ neovim_platform }}.tar.gz"
+    dest: "{{ lookup('env', 'HOME') }}/.local/"
+    remote_src: true
+  when: check_for_updates | bool and neovim_needs_update | bool
+
+- name: Update neovim symlink
+  ansible.builtin.file:
+    src: "{{ lookup('env', 'HOME') }}/.local/nvim-{{ neovim_platform }}/bin/nvim"
+    dest: "{{ lookup('env', 'HOME') }}/.local/bin/nvim"
+    state: link
+    force: true
+  when: check_for_updates | bool and neovim_needs_update | bool

@@ -1,0 +1,17 @@
+# Ignore syncthing objects
+/.stfolder
+/.stignore
+/.stversions
+
+# Ignore cache files
+__pycache__/
+.tmp
+.cnk
+.pybuilder/
+**/.git
+
+# Ignore SSH Keys - Obviously
+**/.pem
+**/.key
+.key
+.pem

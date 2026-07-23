@@ -1,0 +1,52 @@
+
+# Use emacs keybindings even if our EDITOR is set to vi
+bindkey -e
+
+autoload -Uz compinit && compinit
+# autoload -Uz bashcompinit && bashcompinit
+
+# Load unified environmental variables
+source ~/.env_vars
+
+# Keep 1000 lines of history within the shell and save it to ~/.zsh_history:
+HISTSIZE=1000
+SAVEHIST=1000
+HISTFILE=~/.zsh_history
+HISTCONTROL=ignoreboth
+export HISTTIMEFORMAT='%F %T %P '
+
+
+# Define clear screen function for Ctrl+Alt+l
+zle -N clear
+bindkey '^[[1;5L' clear
+
+# zsh specific alias
+alias src="source $HOME/.zshrc && echo .zshrc reloaded"
+
+# antidote plugin manager
+COMPLETION_WAITING_DOTS="true"
+ZSH_DISABLE_COMPFIX="true"
+export ANTIDOTE_HOME="$HOME/.antidote"
+source ~/.antidote/antidote.zsh
+antidote load
+
+bindkey '^y' autosuggest-accept
+
+# Activate fzf
+[ -f ~/.fzf.zsh ] && source ~/.fzf.zsh && bindkey '^R' fzf-history-widget
+
+# Activate tmux if not running as root
+[ -n "$(command -v tmux)" ] && [ "$USER" != "root" ] && [ -z "$TMUX" ] && { tmux attach || exec tmux new-session -f ~/.tmux.conf; }
+
+# Final deduplication after all processing
+export PATH="$(echo "$PATH" | awk -v RS=: -v home="$HOME" '$0 != home"/bin" && !seen[$0]++ {printf "%s%s", (NR==1 ? "" : ":"), $0}')" 
+
+# Activate starship if installed
+if [ -n "$(command -v starship)" ]; then
+  eval "$(starship init zsh)" 
+else;
+ PROMPT='%F{%(#.blue.green)}┌──%F{green}[%F{white}%D{%y-%m-%d} %D{%I:%M:%S %p}%F{green}]-(%B%F{%(#.red.blue)}%n㉿%m%b%F{%(#.blue.green)})-[%B%F{reset}%(6~.%-1~/…/%4~.%5~)%b%F{%(#.blue.green)}]
+└─%B%(#.%F{red}#.%F{blue}$)%b%F{reset}' 
+fi
+
+# cd ~

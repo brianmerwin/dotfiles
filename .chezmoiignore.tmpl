@@ -1,0 +1,37 @@
+# Configure chezmoi to ignore these patterns within managed directories
+
+#nb notebook app exclusions
+.nb/**
+!.nb/
+!.nb/home/
+!.nb/home/.git/
+!.nb/home/.git/config
+
+#nvim manifest
+**/.config/nvim/lazy-lock.json
+**/session.vim
+**/__pycache__
+**/Pipfile.lock
+**/.tmp
+**/.bkp
+**/.git
+**/.cache
+.antidote/tests/tmp_home
+.antidote/tests/tmp_home/*
+.bootstrap/tmp
+.ansible
+# Plain SSH keys — only encrypted versions allowed in repo
+dot_ssh/id_*
+dot_ssh/known_hosts
+
+# Starship binary managed by Ansible role, not chezmoi
+dot_local/bin/executable_starship
+
+{{- if eq .chezmoi.os "darwin" }}
+# macOS: bash not used
+dot_bashrc
+{{- end }}
+
+
+
+

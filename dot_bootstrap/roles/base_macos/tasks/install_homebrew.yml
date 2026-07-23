@@ -1,0 +1,32 @@
+---
+- name: Check if Homebrew is installed
+  ansible.builtin.stat:
+    path: "{{ lookup('env', 'HOME') }}/.homebrew/bin/brew"
+  register: homebrew_installed
+
+- name: Install Homebrew
+  when: not homebrew_installed.stat.exists
+  block:
+    - name: Clone Homebrew repository
+      ansible.builtin.git:
+        repo: https://github.com/Homebrew/brew
+        dest: "{{ lookup('env', 'HOME') }}/.homebrew/Homebrew"
+        version: master
+        depth: 1
+
+    - name: Create Homebrew bin symlink
+      ansible.builtin.file:
+        src: "../Homebrew/bin/brew"
+        dest: "{{ lookup('env', 'HOME') }}/.homebrew/bin/brew"
+        state: link
+
+    - name: Run brew update
+      ansible.builtin.command: "{{ lookup('env', 'HOME') }}/.homebrew/bin/brew update --force --quiet"
+      changed_when: true
+
+    - name: Fix Homebrew zsh directory permissions
+      ansible.builtin.file:
+        path: "{{ lookup('env', 'HOME') }}/.homebrew/share/zsh"
+        mode: '0755'
+        recurse: true
+      failed_when: false

@@ -1,0 +1,8 @@
+---
+# tasks file for base_linux
+
+- name: Ensure ~/.local/bin exists
+  ansible.builtin.include_tasks: user_bin.yml
+
+- name: Install packages
+  ansible.builtin.include_tasks: install_packages.yml

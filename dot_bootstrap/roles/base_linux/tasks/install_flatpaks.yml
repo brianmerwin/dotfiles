@@ -1,0 +1,32 @@
+---
+#####################################
+# Installing flatpak based packages #
+#####################################
+
+- name: Add flathub remote repository
+  community.general.flatpak_remote:
+    name: flathub
+    state: present
+    flatpakrepo_url: https://flathub.org/repo/flathub.flatpakrepo
+    method: system
+
+- name: Install flatpak applications
+  community.general.flatpak:
+    name: "{{ item }}"
+    state: present
+    method: system
+  with_items:
+    # - com.discordapp.Discord
+    # - com.github.tchx84.Flatseal
+    # - com.github.zocker_160.SyncThingy
+    # - io.github.flattool.Warehouse
+    # - io.gitlab.librewolf-community
+    # - it.mijorus.gearlever
+    #- md.obsidian.Obsidian
+    # - org.chromium.Chromium
+    # - org.flathub.flatpak-external-data-checker
+    # - org.kicad.KiCad
+    # - org.libreoffice.LibreOffice
+    # - org.libreoffice.LibreOffice.Help
+
+...

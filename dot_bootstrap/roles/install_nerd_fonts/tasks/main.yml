@@ -1,0 +1,33 @@
+---
+- name: Get latest Nerd Fonts release
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest
+    return_content: true
+  register: nerd_fonts_release
+
+- name: Set nerd fonts version fact
+  ansible.builtin.set_fact:
+    nerd_fonts_version: "{{ nerd_fonts_release.json.tag_name }}"
+
+- name: Check if Nerd Fonts are installed
+  ansible.builtin.stat:
+    path: "{{ lookup('env', 'HOME') }}/.local/share/fonts/FiraCodeNerdFont-Regular.ttf"
+  register: nerd_fonts_installed
+
+- name: Ensure fonts directory exists
+  ansible.builtin.file:
+    path: "{{ lookup('env', 'HOME') }}/.local/share/fonts"
+    state: directory
+    mode: '0755'
+  when: not nerd_fonts_installed.stat.exists
+
+- name: Download and extract Nerd Fonts
+  ansible.builtin.unarchive:
+    src: "https://github.com/ryanoasis/nerd-fonts/releases/download/{{ nerd_fonts_version }}/FiraCode.zip"
+    dest: "{{ lookup('env', 'HOME') }}/.local/share/fonts"
+    remote_src: true
+  when: not nerd_fonts_installed.stat.exists
+
+- name: Rebuild font cache
+  ansible.builtin.command: fc-cache -fv
+  changed_when: not nerd_fonts_installed.stat.exists

@@ -1,0 +1,13 @@
+---
+- name: Check if opencode is installed
+  ansible.builtin.stat:
+    path: "{{ lookup('env', 'HOME') }}/.opencode/bin/opencode"
+  register: opencode_installed
+
+- name: Install opencode
+  ansible.builtin.shell: curl -fsSL https://opencode.ai/install | bash
+  args:
+    executable: /bin/bash
+    creates: "{{ lookup('env', 'HOME') }}/.opencode/bin/opencode"
+  changed_when: true
+  when: not opencode_installed.stat.exists

@@ -1,0 +1,14 @@
+---
+# tasks file for base_macos
+
+- name: Ensure ~/.local/bin exists
+  ansible.builtin.file:
+    path: "{{ lookup('env', 'HOME') }}/.local/bin"
+    state: directory
+    mode: '0755'
+
+- name: Install Homebrew
+  ansible.builtin.include_tasks: install_homebrew.yml
+
+- name: Install packages
+  ansible.builtin.include_tasks: install_packages.yml

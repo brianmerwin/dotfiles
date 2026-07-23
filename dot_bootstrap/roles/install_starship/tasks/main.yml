@@ -1,0 +1,55 @@
+---
+- name: Check if starship is installed
+  ansible.builtin.stat:
+    path: "{{ lookup('env', 'HOME') }}/.local/bin/starship"
+  register: starship_installed
+
+- name: Set starship architecture fact
+  ansible.builtin.set_fact:
+    starship_arch: "{{ 'x86_64' if ansible_facts['architecture'] == 'x86_64' else 'aarch64' }}"
+
+# Initial install
+- name: Get latest starship version from GitHub (initial install)
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/starship/starship/releases/latest
+    return_content: true
+  register: starship_latest_release_init
+  when: not starship_installed.stat.exists
+
+- name: Download and extract starship
+  ansible.builtin.unarchive:
+    src: "https://github.com/starship/starship/releases/download/{{ starship_latest_release_init.json.tag_name }}/starship-{{ starship_arch }}-unknown-linux-musl.tar.gz"
+    dest: "{{ lookup('env', 'HOME') }}/.local/bin/"
+    remote_src: true
+  when: not starship_installed.stat.exists
+
+# Update check
+- name: Get installed starship version
+  ansible.builtin.command: "{{ lookup('env', 'HOME') }}/.local/bin/starship --version"
+  register: starship_installed_version
+  failed_when: false
+  changed_when: false
+  when: check_for_updates | bool
+
+- name: Get latest starship version from GitHub
+  ansible.builtin.uri:
+    url: https://api.github.com/repos/starship/starship/releases/latest
+    return_content: true
+  register: starship_latest_release
+  when: check_for_updates | bool
+
+- name: Determine if starship update needed
+  ansible.builtin.set_fact:
+    starship_needs_update: >-
+      {{ starship_installed_version.rc != 0 or
+         (starship_installed_version.stdout_lines[0] |
+          regex_search('[\\d]+\\.[\\d]+\\.[\\d]+') | trim) !=
+         (starship_latest_release.json.tag_name | regex_replace('^v', '') | trim) }}
+  when: check_for_updates | bool
+
+- name: Download and extract starship update
+  ansible.builtin.unarchive:
+    src: "https://github.com/starship/starship/releases/download/{{ starship_latest_release.json.tag_name }}/starship-{{ starship_arch }}-unknown-linux-musl.tar.gz"
+    dest: "{{ lookup('env', 'HOME') }}/.local/bin/"
+    remote_src: true
+  when: check_for_updates | bool and starship_needs_update | bool
