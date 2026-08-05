@@ -8,6 +8,7 @@ macos_packages:
   - gh
   - git
   - git-crypt
+  - glow
   - gnupg
   - helm
   - htop

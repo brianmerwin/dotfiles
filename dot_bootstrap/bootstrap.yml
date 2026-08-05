@@ -62,11 +62,6 @@
       ansible.builtin.meta: end_play
       when: ansible_facts['os_family'] != 'Darwin'
   roles:
+    # Homebrew installs everything on macOS (see base_macos/vars/main.yml).
+    # The install_* download roles target Linux binaries and are excluded here.
     - base_macos
-    - install_fzf
-    - install_glow
-    - install_helm
-    - install_kubectl
-    - install_neovim
-    - install_starship
-    - install_vault
