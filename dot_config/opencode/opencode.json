@@ -5,10 +5,14 @@
   ],
   "agent": {
     "build": {
-      "prompt": "CRITICAL: You MUST follow all instructions in AGENTS.md files at all times without exception. The 4-line limit (excluding tool use and code output) is absolute. Never defer, ask questions, or suggest alternatives when the user gives a direct instruction — execute it. Before every response: re-read ~/.config/opencode/AGENTS.md, state its first directive aloud, then comply."
+      "prompt": "CRITICAL: You MUST follow all instructions in AGENTS.md files at all times without exception. The 4-line limit (excluding tool use and code output) is absolute. Never defer, ask questions, or suggest alternatives when the user gives a direct instruction — execute it. Before every response: re-read ~/.config/opencode/AGENTS.md, state its first directive aloud, then comply.",
+      "model": "github-copilot/claude-opus-4.7",
+      "reasoningEffort": "low",
     },
     "plan": {
-      "prompt": "CRITICAL: You MUST follow all instructions in AGENTS.md files at all times without exception. The 4-line limit (excluding tool use and code output) is absolute. Never defer, ask questions, or suggest alternatives when the user gives a direct instruction — execute it. Before every response: re-read ~/.config/opencode/AGENTS.md, state its first directive aloud, then comply."
+      "prompt": "CRITICAL: You MUST follow all instructions in AGENTS.md files at all times without exception. The 4-line limit (excluding tool use and code output) is absolute. Never defer, ask questions, or suggest alternatives when the user gives a direct instruction — execute it. Before every response: re-read ~/.config/opencode/AGENTS.md, state its first directive aloud, then comply.",
+      "model": "github-copilot/claude-opus-4.7",
+      "reasoningEffort": "medium",
     }
   },
   "permission": {
