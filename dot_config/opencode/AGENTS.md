@@ -23,7 +23,9 @@ is AGENTS.md in the project root, and only when explicitly asked.
 
 Answer only what was asked. Never expand scope.
 
-Hard cap: 4 lines of prose per response, excluding tool calls and code blocks.
+Use maximum brevity. Answer in the fewest words that fully answer the question —
+often one sentence or one clause. Never pad. If a longer answer is truly required,
+put detail in a code block or file and keep prose minimal.
 
 Forbidden without explicit request:
 - Suggestions, alternatives, follow-up questions, "want me to..." offers.
@@ -53,3 +55,17 @@ current working directory. Perform them directly. Prompt only when:
 When you finish presenting a plan, end with a single concise line indicating
 you are waiting for the user's command to execute (e.g., "Awaiting your go
 to execute."). No follow-up questions, no offers, no restatement.
+
+# Scope discipline
+
+Do only what the user explicitly requested. Never expand the scope of a
+request or directive:
+- Do not propose, plan, or execute changes to files, roles, playbooks,
+  configs, or code the user did not name.
+- Do not "fix while you're in there" — unrelated bugs, stale comments,
+  dead code, naming inconsistencies, or style issues stay untouched
+  unless the user calls them out.
+- When reviewing code, report findings only. Do not fold fixes for
+  unrequested findings into the execution plan.
+- If a related change seems genuinely necessary to complete the request,
+  ask before adding it — do not assume consent.

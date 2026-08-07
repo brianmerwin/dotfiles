@@ -1,0 +1,104 @@
+---
+- name: install_go | Ensure ~/.local/bin exists
+  ansible.builtin.file:
+    path: "{{ lookup('env', 'HOME') }}/.local/bin"
+    state: directory
+    mode: '0755'
+
+- name: install_go | Set go architecture fact
+  ansible.builtin.set_fact:
+    go_arch: "{{ 'arm64' if ansible_facts['architecture'] == 'aarch64' else 'amd64' }}"
+
+- name: install_go | Check if go is installed
+  ansible.builtin.stat:
+    path: "{{ lookup('env', 'HOME') }}/.local/bin/go"
+  register: go_installed
+
+# Initial install
+- name: install_go | Get latest go version from go.dev
+  ansible.builtin.uri:
+    url: https://go.dev/VERSION?m=text
+    return_content: true
+  register: go_latest_release
+  when: not go_installed.stat.exists
+
+- name: install_go | Set latest go version fact (initial install)
+  ansible.builtin.set_fact:
+    go_latest_version: "{{ go_latest_release.content.splitlines()[0] | trim }}"
+  when: not go_installed.stat.exists
+
+- name: install_go | Remove old go installation if present
+  ansible.builtin.file:
+    path: "{{ lookup('env', 'HOME') }}/.local/go"
+    state: absent
+  when: not go_installed.stat.exists
+
+- name: install_go | Download and extract go
+  ansible.builtin.unarchive:
+    src: "https://go.dev/dl/{{ go_latest_version }}.linux-{{ go_arch }}.tar.gz"
+    dest: "{{ lookup('env', 'HOME') }}/.local/"
+    remote_src: true
+  when: not go_installed.stat.exists
+
+- name: install_go | Symlink go binaries to ~/.local/bin
+  ansible.builtin.file:
+    src: "{{ lookup('env', 'HOME') }}/.local/go/bin/{{ item }}"
+    dest: "{{ lookup('env', 'HOME') }}/.local/bin/{{ item }}"
+    state: link
+    force: true
+  loop:
+    - go
+    - gofmt
+  when: not go_installed.stat.exists
+
+# Update check
+- name: install_go | Get installed go version
+  ansible.builtin.command: "{{ lookup('env', 'HOME') }}/.local/bin/go version"
+  register: go_installed_version
+  failed_when: false
+  changed_when: false
+  when: check_for_updates | bool
+
+- name: install_go | Get latest go version from go.dev for update
+  ansible.builtin.uri:
+    url: https://go.dev/VERSION?m=text
+    return_content: true
+  register: go_latest_release_update
+  when: check_for_updates | bool
+
+- name: install_go | Set latest go version fact (update)
+  ansible.builtin.set_fact:
+    go_latest_version_update: "{{ go_latest_release_update.content.splitlines()[0] | trim }}"
+  when: check_for_updates | bool
+
+- name: install_go | Determine if go update needed
+  ansible.builtin.set_fact:
+    go_needs_update: >-
+      {{ go_installed_version.rc != 0 or
+         (go_installed_version.stdout | regex_search('go[\\d]+\\.[\\d]+(\\.[\\d]+)?') | trim) !=
+         (go_latest_version_update | trim) }}
+  when: check_for_updates | bool
+
+- name: install_go | Remove old go installation for update
+  ansible.builtin.file:
+    path: "{{ lookup('env', 'HOME') }}/.local/go"
+    state: absent
+  when: check_for_updates | bool and go_needs_update | bool
+
+- name: install_go | Download and extract go update
+  ansible.builtin.unarchive:
+    src: "https://go.dev/dl/{{ go_latest_version_update }}.linux-{{ go_arch }}.tar.gz"
+    dest: "{{ lookup('env', 'HOME') }}/.local/"
+    remote_src: true
+  when: check_for_updates | bool and go_needs_update | bool
+
+- name: install_go | Update go symlinks
+  ansible.builtin.file:
+    src: "{{ lookup('env', 'HOME') }}/.local/go/bin/{{ item }}"
+    dest: "{{ lookup('env', 'HOME') }}/.local/bin/{{ item }}"
+    state: link
+    force: true
+  loop:
+    - go
+    - gofmt
+  when: check_for_updates | bool and go_needs_update | bool

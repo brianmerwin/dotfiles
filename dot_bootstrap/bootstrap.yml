@@ -37,10 +37,10 @@
   roles:
     # - install_docker
     # - install_govc
-    # - install_lazyssh
     - install_antidote
     - install_fzf
     - install_glow
+    - install_go
     - install_helm
     - install_kubectl
     - install_lazygit
