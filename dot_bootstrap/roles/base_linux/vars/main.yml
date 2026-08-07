@@ -22,17 +22,20 @@ common_packages:
 
 # RHEL / Fedora / Rocky / Alma specific packages
 redhat_packages:
-  - "@Development Tools"
   - bat
   - gh
   - lua
-  - luarocks
   - nodejs
   - npm
   - python3.12
   - rust
   - syncthing
   - tldr
+
+# RedHat packages that require the CRB / CodeReady Builder repo
+redhat_crb_packages:
+  - "@Development Tools"
+  - luarocks
 
 # Debian / Ubuntu specific packages
 debian_packages:

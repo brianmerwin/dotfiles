@@ -6,12 +6,57 @@
     use: auto
     name: "{{ common_packages }}"
 
-- name: install_packages | Enable CRB repo
+- name: install_packages | Enable CRB repo (Rocky/Alma/CentOS)
   become: true
   ansible.builtin.command:
     cmd: dnf config-manager --enable crb
+  register: base_linux_crb_enable
+  changed_when: "'Enabling repo' in base_linux_crb_enable.stdout or base_linux_crb_enable.rc == 0"
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - ansible_facts['distribution'] in ['Rocky', 'AlmaLinux', 'CentOS']
+
+- name: install_packages | Check RHEL subscription status
+  become: true
+  ansible.builtin.command:
+    cmd: subscription-manager identity
+  register: base_linux_rhsm_identity
+  changed_when: false
+  failed_when: false
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - ansible_facts['distribution'] == 'RedHat'
+
+- name: install_packages | Enable CodeReady Builder repo (RHEL)
+  become: true
+  ansible.builtin.command:
+    cmd: "subscription-manager repos --enable codeready-builder-for-rhel-{{ ansible_facts['distribution_major_version'] }}-{{ ansible_facts['architecture'] }}-rpms"
+  register: base_linux_rhel_crb
+  changed_when: base_linux_rhel_crb.rc == 0
+  failed_when: false
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - ansible_facts['distribution'] == 'RedHat'
+    - base_linux_rhsm_identity.rc | default(1) == 0
+
+- name: install_packages | Compute CRB availability
+  ansible.builtin.set_fact:
+    base_linux_crb_available: >-
+      {{
+        (ansible_facts['distribution'] in ['Rocky', 'AlmaLinux', 'CentOS']
+          and (base_linux_crb_enable.rc | default(1)) == 0)
+        or (ansible_facts['distribution'] == 'RedHat'
+          and (base_linux_rhel_crb.rc | default(1)) == 0)
+        or ansible_facts['distribution'] == 'Fedora'
+      }}
   when: ansible_facts['os_family'] == 'RedHat'
-  ignore_errors: true
+
+- name: install_packages | Warn when CRB is unavailable
+  ansible.builtin.debug:
+    msg: "CRB/CodeReady Builder unavailable; skipping {{ redhat_crb_packages | join(', ') }}"
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - not (base_linux_crb_available | default(false))
 
 - name: install_packages | Deploy RedHat packages
   become: true
@@ -20,6 +65,15 @@
     state: present
     name: "{{ redhat_packages }}"
   when: ansible_facts['os_family'] == 'RedHat'
+
+- name: install_packages | Deploy RedHat CRB packages
+  become: true
+  ansible.builtin.dnf:
+    state: present
+    name: "{{ redhat_crb_packages }}"
+  when:
+    - ansible_facts['os_family'] == 'RedHat'
+    - base_linux_crb_available | default(false)
 
 - name: install_packages | Deploy Debian packages
   become: true
