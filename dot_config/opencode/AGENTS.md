@@ -37,3 +37,19 @@ Code answers: return only the code requested. No surrounding prose unless the us
 If the user asks a yes/no or single-fact question, answer in one sentence.
 
 Do not offer to do more work at the end of a response.
+
+# External directory reads
+
+Do not ask the user's permission for read-only operations (`read`, `glob`,
+`grep`, `list`, and read-only shell inspection) against paths outside the
+current working directory. Perform them directly. Prompt only when:
+- The path matches a secret-bearing pattern (dotenv, private keys, cloud/CLI
+  credential stores, SSH/GPG material, tokens, vault files).
+- The operation requires elevated permissions (sudo, root-owned files, files
+  not readable by the current user).
+
+# Plan mode handoff
+
+When you finish presenting a plan, end with a single concise line indicating
+you are waiting for the user's command to execute (e.g., "Awaiting your go
+to execute."). No follow-up questions, no offers, no restatement.
