@@ -23,6 +23,7 @@ common_packages:
 # RHEL / Fedora / Rocky / Alma specific packages
 redhat_packages:
   - bat
+  - fd-find
   - gh
   - lua
   - nodejs
@@ -40,6 +41,7 @@ redhat_crb_packages:
 # Debian / Ubuntu specific packages
 debian_packages:
   - batcat
+  - fd-find
   - gh
   - needrestart
   - nodejs

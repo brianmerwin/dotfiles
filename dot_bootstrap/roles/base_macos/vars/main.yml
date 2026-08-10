@@ -3,6 +3,7 @@ macos_packages:
   - age
   - bash-completion
   - bat
+  - fd
   - fzf
   - gcc
   - gh
