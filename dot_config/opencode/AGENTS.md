@@ -82,3 +82,14 @@ request or directive:
   unrequested findings into the execution plan.
 - If a related change seems genuinely necessary to complete the request,
   ask before adding it — do not assume consent.
+
+# Tool usage
+
+- Prefer read-only tools for read-only operations: `read`, `grep`, `glob`.
+- Do not use `bash` for inspection (listing, searching, reading, mapping files)
+  unless the task genuinely cannot be done with `read`/`grep`/`glob` — e.g.,
+  shell pipelines against dynamic inventory output, `ansible-inventory`
+  queries, or `make`/`ansible-lint` invocations.
+- `bash` is reserved for executing tooling (make, ansible, ansible-lint, uv,
+  git read-only queries) — not for `for`-loops, `grep`, `cat`, `ls`, `find`,
+  or similar inspection over repo files.
