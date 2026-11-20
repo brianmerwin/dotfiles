@@ -1,0 +1,23 @@
+---
+# Runs one install_* role without aborting the play on failure.
+# Expects `bootstrap_install` = { role: <name>, depends_on: [<role>, ...] }.
+- name: run_install_role | Skip {{ bootstrap_install.role }} (dependency failed)
+  ansible.builtin.set_fact:
+    bootstrap_skipped_roles: "{{ bootstrap_skipped_roles + [bootstrap_install.role] }}"
+  when: >-
+    bootstrap_install.depends_on | default([])
+    | intersect(bootstrap_failed_roles + bootstrap_skipped_roles) | length > 0
+
+- name: run_install_role | Install {{ bootstrap_install.role }}
+  when: bootstrap_install.role not in bootstrap_skipped_roles
+  block:
+    - name: run_install_role | Include {{ bootstrap_install.role }}
+      ansible.builtin.include_role:
+        name: "{{ bootstrap_install.role }}"
+  rescue:
+    - name: run_install_role | Record {{ bootstrap_install.role }} failure
+      ansible.builtin.set_fact:
+        bootstrap_failed_roles: "{{ bootstrap_failed_roles + [bootstrap_install.role] }}"
+        bootstrap_failure_msgs: >-
+          {{ bootstrap_failure_msgs | combine({bootstrap_install.role:
+             ansible_failed_result.msg | default('unknown error')}) }}

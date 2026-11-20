@@ -34,23 +34,42 @@
     - name: Skip if not applicable
       ansible.builtin.meta: end_play
       when: ansible_facts['os_family'] == 'Darwin'
-  roles:
-    # - install_docker
-    # - install_govc
-    - install_antidote
-    - install_fzf
-    - install_glow
-    - install_go
-    - install_helm
-    - install_kubectl
-    - install_lazygit
-    - install_nb
-    - install_neovim
-    - install_nerd_fonts
-    - install_opencode
-    - install_starship
-    - install_tree_sitter
-    - install_vault
+  vars:
+    bootstrap_failed_roles: []
+    bootstrap_skipped_roles: []
+    bootstrap_failure_msgs: {}
+    # A failed role doesn't stop the play; roles listing it in depends_on are skipped.
+    bootstrap_install_roles:
+      # - role: install_docker
+      # - role: install_govc
+      - role: install_antidote
+      - role: install_fzf
+      - role: install_glow
+      - role: install_go
+      - role: install_helm
+      - role: install_kubectl
+      - role: install_lazygit
+      - role: install_nb
+      - role: install_neovim
+      - role: install_nerd_fonts
+      - role: install_opencode
+      - role: install_starship
+      - role: install_tree_sitter
+      - role: install_vault
+  tasks:
+    - name: Run install roles
+      ansible.builtin.include_tasks: tasks/run_install_role.yml
+      loop: "{{ bootstrap_install_roles }}"
+      loop_control:
+        loop_var: bootstrap_install
+        label: "{{ bootstrap_install.role }}"
+
+    - name: Report install failures
+      ansible.builtin.debug:
+        msg:
+          failed: "{{ bootstrap_failure_msgs }}"
+          skipped_due_to_failed_dependency: "{{ bootstrap_skipped_roles }}"
+      when: bootstrap_failed_roles | length > 0
 
 - name: Apply bootstrap configurations (macOS)
   hosts: localhost

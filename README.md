@@ -5,8 +5,9 @@ Linux dotfiles. Nothing to see here.
 Locate and copy the `setup_ssh.sh` script from this repo. Place it into your user directory. Run `chmod +z .\setup_ssh.sh` and execute the script.
 
 ### Install Pre-requisites
+Enable CRB and EPEL (Rocky/Alma/CentOS) before setting up chezmoi — the bootstrap playbook needs packages from both.
 ```bash
-sudo dnf -y group install "Development Tools" 
+sudo dnf config-manager --set-enabled crb && sudo dnf -y install epel-release && sudo dnf -y group install "Development Tools"
 ```
 
 ### SSH Keys
