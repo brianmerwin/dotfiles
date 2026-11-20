@@ -23,33 +23,37 @@
     tree_sitter_version: "{{ tree_sitter_release.json.tag_name | regex_replace('^v', '') }}"
   when: not tree_sitter_installed.stat.exists
 
-- name: Download tree-sitter binary
+- name: install_tree_sitter | Create temp download directory
+  ansible.builtin.tempfile:
+    state: directory
+    suffix: install_tree_sitter
+  register: tree_sitter_tempdir
+  when: not tree_sitter_installed.stat.exists
+
+# The release asset is a gzipped single binary, not a tarball, so unarchive can't handle it.
+- name: install_tree_sitter | Download tree-sitter binary
   ansible.builtin.get_url:
     url: "https://github.com/tree-sitter/tree-sitter/releases/download/v{{ tree_sitter_version }}/tree-sitter-linux-{{ 'x64' if ansible_facts['architecture'] == 'x86_64' else 'arm64' }}.gz"
-    dest: /tmp/tree-sitter.gz
+    dest: "{{ tree_sitter_tempdir.path }}/tree-sitter.gz"
     mode: '0644'
   when: not tree_sitter_installed.stat.exists
 
-- name: Extract tree-sitter binary
-  ansible.builtin.unarchive:
-    src: /tmp/tree-sitter.gz
-    dest: /tmp
-    remote_src: true
+- name: install_tree_sitter | Decompress tree-sitter binary
+  ansible.builtin.command:
+    cmd: gunzip "{{ tree_sitter_tempdir.path }}/tree-sitter.gz"
+    creates: "{{ tree_sitter_tempdir.path }}/tree-sitter"
   when: not tree_sitter_installed.stat.exists
 
-- name: Install tree-sitter binary
+- name: install_tree_sitter | Install tree-sitter binary
   ansible.builtin.copy:
-    src: /tmp/tree-sitter
+    src: "{{ tree_sitter_tempdir.path }}/tree-sitter"
     dest: "{{ lookup('env', 'HOME') }}/.local/bin/tree-sitter"
     remote_src: true
     mode: '0755'
   when: not tree_sitter_installed.stat.exists
 
-- name: Remove temporary tree-sitter files
+- name: install_tree_sitter | Remove temp download directory
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: "{{ tree_sitter_tempdir.path }}"
     state: absent
-  loop:
-    - /tmp/tree-sitter.gz
-    - /tmp/tree-sitter
-  when: not tree_sitter_installed.stat.exists
+  when: not tree_sitter_installed.stat.exists and tree_sitter_tempdir.path is defined
