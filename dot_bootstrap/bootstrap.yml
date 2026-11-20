@@ -58,7 +58,7 @@
       - role: install_vault
   tasks:
     - name: Run install roles
-      ansible.builtin.include_tasks: tasks/run_install_role.yml
+      ansible.builtin.include_tasks: tasks/include_install_role.yml
       loop: "{{ bootstrap_install_roles }}"
       loop_control:
         loop_var: bootstrap_install

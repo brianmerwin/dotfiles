@@ -15,7 +15,7 @@ Key rules to enforce:
 - `roles/` — 19 roles; most are single-task `install_*` roles
 - `roles/base_linux/` and `roles/base_macos/` — multi-task roles with `vars/`
 - `roles/install_docker/` — only role with `handlers/`, `templates/`, `tests/`, `README.md`
-- `tasks/run_install_role.yml` — wraps each Linux `install_*` role in block/rescue so one failure doesn't abort the play. Add new Linux install roles to `bootstrap_install_roles` in `bootstrap.yml` (not a `roles:` list); set `depends_on: [<role>]` if the role needs another install role to have succeeded
+- `tasks/include_install_role.yml` — (must not start with `run_`: chezmoi executes `run_*` source files as scripts) wraps each Linux `install_*` role in block/rescue so one failure doesn't abort the play. Add new Linux install roles to `bootstrap_install_roles` in `bootstrap.yml` (not a `roles:` list); set `depends_on: [<role>]` if the role needs another install role to have succeeded
 
 ## Deployed via chezmoi
 This project lives inside a chezmoi dotfiles repo. It is run by `run_onchange_00_ansible_bootstrap.sh`, which:
